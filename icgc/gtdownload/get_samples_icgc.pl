@@ -258,7 +258,7 @@ sub get_samples {
 		  print R "BAM file size: $size_gb GB\n";
 		  $total_file_size = $total_file_size + $size_gb;
 	          print R "FILE: $file\n";
-		  print R "gtdownload -c pubkey.txt -v -d $analysisDataURI\n";
+		  print R "gtdownload -c pubkey -v -d $analysisDataURI\n";
 		  print R "OUTPUT DIR: -p $output_dir/$dcc_code/$analysisId/tumour/\n";
 		  my $cmd2 = "$gtdownload -c keyfile_IB.txt -v -d $analysisDataURI -p $output_dir/$dcc_code/$analysisId/tumour/";
 		  system($cmd2);
@@ -320,7 +320,7 @@ sub get_cntrl_sample {
 	      print CNTRL "TUMOR ORIGIN: $tumor_origin\n";
 	      print CNTRL "gtdownload -c pubkey.txt -v -d $analysisDataURI\n";
 	      print CNTRL "OUTPUT DIR: -p $output_dir/$dcc_code/$tumor_origin/normal/\n";
-	      my $cmd3 = "$gtdownload -c keyfile_IB.txt -v -d $analysisDataURI -p $output_dir/$dcc_code/$tumor_origin/normal/";
+	      my $cmd3 = "$gtdownload -c keyfile -v -d $analysisDataURI -p $output_dir/$dcc_code/$tumor_origin/normal/";
 	      system($cmd3);
 	  }
 	$hash_downloaded_files{$analysisDataURI} = 'cntrl';

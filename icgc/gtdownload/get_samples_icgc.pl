@@ -22,10 +22,11 @@ my $gnos_url = "https://gtrepo-ebi.annailabs.com";
 # download data by default 
 my $download_files = 1;
 my $cgquery='/usr/bin/cgquery';
-my $gtdownload='/usr/bin/gtupload';
+my $gtdownload='/usr/bin/gtdownload';
 my $no_download_results=0;
 my $dcc_project_list = 'dcc_projects.txt';
 # dir for ourtputing the files
+my $cwd =cwd(); 
 my $output_dir = cwd();
 # keep track of samples downloaded from each data centre
 my $report_name = "report_samples.txt";
@@ -43,7 +44,7 @@ my $cntrl_ids = {};
 my $center = get_center_info($gnos_url);
 my $hashfile = "files.".$center.".hash";
 
-if (scalar(@ARGV) < 1 || scalar(@ARGV) > 2) {
+if (scalar(@ARGV) < 1 || scalar(@ARGV) > 3) {
   #print "USAGE: 'perl $0 --gnos-url <URL> [--working-dir <working_dir>] [--report <download_report.txt>] [--no-download]'\n";
   print "USAGE: 'perl $0 --gnos-url <URL> [--dcc_projects <dcc_projects_list.txt>] [--no-download]'\n";  
   print "\t--gnos-url a URL for a GNOS server, e.g. https://gtrepo-ebi.annailabs.com\n";
@@ -54,9 +55,11 @@ if (scalar(@ARGV) < 1 || scalar(@ARGV) > 2) {
   exit;
 }
 
-GetOptions("gnos-url=s" => \$gnos_url, "dcc-projects:s" => \$dcc_project_list, "no-download" => \$no_download_results, "report_name=s" => \$report_name, "output_dir=s" => \$output_dir );
+GetOptions("gnos-url=s" => \$gnos_url, "dcc-projects:s" => \$dcc_project_list, "no-download" => \$no_download_results, "report_name=s" => \$report_name, "output-dir=s" => \$output_dir );
 
 if ($no_download_results) { $download_files = 0; }
+
+print "DATA WILL BE OUTPUTED HERE: $output_dir\n";
 
 ##############
 # MAIN STEPS #
@@ -89,7 +92,7 @@ open R, ">$report_name" or die;
 
 # setup directories donwload samples ...
 
-if (-e "$output_dir/$hashfile")
+if (-e "$cwd/$hashfile")
 {
  print "FOUND HASH\n";
  print "LOADING HASH\n";   
@@ -145,7 +148,7 @@ sub get_samples {
   # PARSE XML
   my $parser = new XML::DOM::Parser;
   my $auth = get_center_info($gnos_url);
-  ##my $cmd = "mkdir -p xml/$auth; $cgquery -s $gnos_url -o xml/$auth/data.xml 'study=*&state=live'"; print OUT "$cmd\n"; system($cmd); 
+  my $cmd = "mkdir -p xml/$auth; $cgquery -s $gnos_url -o xml/$auth/data.xml 'study=*&state=live'"; print OUT "$cmd\n"; system($cmd); 
   my $doc = $parser->parsefile("xml/$auth/data.xml");  
   # print OUT all HREF attributes of all CODEBASE elements
   my $nodes = $doc->getElementsByTagName ("Result");
@@ -258,12 +261,14 @@ sub get_samples {
 		  print R "BAM file size: $size_gb GB\n";
 		  $total_file_size = $total_file_size + $size_gb;
 	          print R "FILE: $file\n";
-		  print R "gtdownload -c pubkey -v -d $analysisDataURI\n";
-		  print R "OUTPUT DIR: -p $output_dir/$dcc_code/$analysisId/tumour/\n";
-		  my $cmd2 = "$gtdownload -c keyfile -v -d $analysisDataURI -p $output_dir/$dcc_code/$analysisId/tumour/";
+		  #print R "gtdownload -c pubkey.txt -v -d $analysisDataURI\n";
+		  #print R "OUTPUT DIR: -p $output_dir/$dcc_code/$analysisId/tumour/\n";
+		  print R "$gtdownload -c keyfile_IB.txt -v -d $analysisDataURI -p $output_dir/$dcc_code/$analysisId/tumour/\n";
+		  my $cmd2 = "mkdir -p $output_dir/$dcc_code/$analysisId/tumour/; $gtdownload -c keyfile_IB.txt -vv -d $analysisDataURI -p $output_dir/$dcc_code/$analysisId/tumour/";
 		  system($cmd2);
 	      }
-	      $hash_downloaded_files{$analysisDataURI} = 'tumour'; 
+	      $hash_downloaded_files{$analysisDataURI} = 'tumour';
+	      store(\%hash_downloaded_files, $hashfile); 
 	      #print R "gtdownload -c pubkey.txt -v -d $analysisDataURI/$file\n";
 	      #-d /.mounts/labs/ferr_lab/scratch/data/TCGA/coad/coad.xml -p /.mounts/labs/ferr_lab/scratch/data/TCGA/coad/
 	      #my $cmd2 = "$gtdownload -c pubkey.txt -v -d $analysisDataURI\n";
@@ -318,12 +323,14 @@ sub get_cntrl_sample {
 	      print CNTRL "BAM file size: $size_gb GB\n";
 	      print CNTRL "FILE: $file\n";
 	      print CNTRL "TUMOR ORIGIN: $tumor_origin\n";
-	      print CNTRL "gtdownload -c pubkey -v -d $analysisDataURI\n";
-	      print CNTRL "OUTPUT DIR: -p $output_dir/$dcc_code/$tumor_origin/normal/\n";
-	      my $cmd3 = "$gtdownload -c keyfile -v -d $analysisDataURI -p $output_dir/$dcc_code/$tumor_origin/normal/";
+	      #print CNTRL "gtdownload -c pubkey.txt -v -d $analysisDataURI\n";
+	      #print CNTRL "OUTPUT DIR: -p $output_dir/$dcc_code/$tumor_origin/normal/\n";
+	      #print CNTRL "$gtdownload -c keyfile_IB.txt -v -d $analysisDataURI -p $output_dir/$dcc_code/$tumor_origin/normal/\n";
+	      my $cmd3 = "mkdir -p $output_dir/$dcc_code/$tumor_origin/normal/; $gtdownload -c keyfile_IB.txt -vv -d $analysisDataURI -p $output_dir/$dcc_code/$tumor_origin/normal/";
 	      system($cmd3);
 	  }
-	$hash_downloaded_files{$analysisDataURI} = 'cntrl';
+	    $hash_downloaded_files{$analysisDataURI} = 'cntrl';
+	    store(\%hash_downloaded_files, $hashfile); 
      }
     }
     
